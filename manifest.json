@@ -10,7 +10,7 @@
   "commands": {
     "reload-all-tabs": {
       "suggested_key": {
-        "default": "Alt+Shift+R",
+        "default": "Ctrl+Shift+E",
         "mac": "Command+Shift+E"
       },
       "description": "Reload all tabs in current window"

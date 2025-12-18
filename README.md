@@ -5,7 +5,7 @@ A minimal Chrome extension that reloads all tabs in the current window with one 
 ## Features
 
 - Click the extension icon to reload all tabs instantly
-- Keyboard shortcut support (default: `Cmd+Shift+E` on Mac, `Alt+Shift+R` on Windows/Linux)
+- Keyboard shortcut support (default: `Cmd+Shift+E` on Mac, `Ctrl+Shift+E` on Windows/Linux)
 - Only affects the current window, not all browser windows
 
 ## Installation
