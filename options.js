@@ -1,6 +1,9 @@
 const DEFAULT_ROLLING_ENABLED = true;
-const ROLLING_BATCH_SIZE = 1;
-const ROLLING_COOLDOWN_SECONDS = 3;
+const DEFAULT_ROLLING_BATCH_SIZE = 1;
+const MAX_ROLLING_BATCH_SIZE = 3;
+const DEFAULT_ROLLING_COOLDOWN_SECONDS = 3;
+const MIN_ROLLING_COOLDOWN_SECONDS = 3;
+const MAX_COOLDOWN_SECONDS = 900;
 const DEFAULT_BATCH_SIZE = 5;
 const DEFAULT_COOLDOWN_SECONDS = 5;
 const MIN_COOLDOWN_SECONDS = 5;
@@ -8,7 +11,10 @@ const MIN_COOLDOWN_SECONDS = 5;
 const form = document.getElementById("settings-form");
 const rollingEnabledInput = document.getElementById("rollingEnabled");
 const batchSizeInput = document.getElementById("batchSize");
+const batchSizeHint = document.getElementById("batchSizeHint");
 const cooldownInput = document.getElementById("cooldownSeconds");
+const cooldownHint = document.getElementById("cooldownHint");
+const rollingHint = document.getElementById("rollingHint");
 const statusEl = document.getElementById("status");
 
 function toPositiveInteger(value, fallback) {
@@ -33,10 +39,18 @@ function normalizeSettings(rawSettings = {}) {
       : DEFAULT_ROLLING_ENABLED;
 
   if (rollingEnabled) {
+    const rollingBatch = toPositiveInteger(rawSettings.batchSize, DEFAULT_ROLLING_BATCH_SIZE);
+    const rollingCooldown = toPositiveInteger(
+      rawSettings.cooldownSeconds,
+      DEFAULT_ROLLING_COOLDOWN_SECONDS
+    );
     return {
       rollingEnabled: true,
-      batchSize: ROLLING_BATCH_SIZE,
-      cooldownSeconds: ROLLING_COOLDOWN_SECONDS,
+      batchSize: Math.min(rollingBatch, MAX_ROLLING_BATCH_SIZE),
+      cooldownSeconds: Math.min(
+        Math.max(rollingCooldown, MIN_ROLLING_COOLDOWN_SECONDS),
+        MAX_COOLDOWN_SECONDS
+      ),
     };
   }
 
@@ -52,10 +66,25 @@ function setStatus(message, isError = false) {
   statusEl.style.color = isError ? "#b00020" : "";
 }
 
-function syncInputLockState() {
+function syncInputConstraints() {
   const isRolling = rollingEnabledInput.checked;
-  batchSizeInput.disabled = isRolling;
-  cooldownInput.disabled = isRolling;
+  if (isRolling) {
+    batchSizeInput.min = "1";
+    batchSizeInput.max = String(MAX_ROLLING_BATCH_SIZE);
+    cooldownInput.min = String(MIN_ROLLING_COOLDOWN_SECONDS);
+    cooldownInput.max = String(MAX_COOLDOWN_SECONDS);
+    batchSizeHint.textContent = `1\u2013${MAX_ROLLING_BATCH_SIZE} tabs. Active tab reloads first, then left-to-right.`;
+    cooldownHint.textContent = `${MIN_ROLLING_COOLDOWN_SECONDS}\u2013${MAX_COOLDOWN_SECONDS} seconds between each batch.`;
+    rollingHint.textContent = "Active-tab-first, then left-to-right serial reload.";
+  } else {
+    batchSizeInput.min = "1";
+    batchSizeInput.removeAttribute("max");
+    cooldownInput.min = String(MIN_COOLDOWN_SECONDS);
+    cooldownInput.removeAttribute("max");
+    batchSizeHint.textContent = "Number of tabs to reload simultaneously.";
+    cooldownHint.textContent = `Minimum ${MIN_COOLDOWN_SECONDS} seconds between each batch.`;
+    rollingHint.textContent = "Active-tab-first, then left-to-right serial reload.";
+  }
 }
 
 async function loadSettings() {
@@ -68,7 +97,7 @@ async function loadSettings() {
   rollingEnabledInput.checked = settings.rollingEnabled;
   batchSizeInput.value = String(settings.batchSize);
   cooldownInput.value = String(settings.cooldownSeconds);
-  syncInputLockState();
+  syncInputConstraints();
 }
 
 form.addEventListener("submit", async (event) => {
@@ -84,7 +113,7 @@ form.addEventListener("submit", async (event) => {
   rollingEnabledInput.checked = settings.rollingEnabled;
   batchSizeInput.value = String(settings.batchSize);
   cooldownInput.value = String(settings.cooldownSeconds);
-  syncInputLockState();
+  syncInputConstraints();
 
   try {
     await chrome.storage.sync.set(settings);
@@ -96,7 +125,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 rollingEnabledInput.addEventListener("change", () => {
-  syncInputLockState();
+  syncInputConstraints();
 });
 
 loadSettings().catch((error) => {

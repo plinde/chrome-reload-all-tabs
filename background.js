@@ -1,6 +1,9 @@
 const DEFAULT_ROLLING_ENABLED = true;
-const ROLLING_BATCH_SIZE = 1;
-const ROLLING_COOLDOWN_SECONDS = 3;
+const DEFAULT_ROLLING_BATCH_SIZE = 1;
+const MAX_ROLLING_BATCH_SIZE = 3;
+const DEFAULT_ROLLING_COOLDOWN_SECONDS = 3;
+const MIN_ROLLING_COOLDOWN_SECONDS = 3;
+const MAX_COOLDOWN_SECONDS = 900;
 const DEFAULT_BATCH_SIZE = 5;
 const DEFAULT_COOLDOWN_SECONDS = 5;
 const MIN_COOLDOWN_SECONDS = 5;
@@ -52,10 +55,18 @@ function normalizeSettings(rawSettings = {}) {
       : DEFAULT_ROLLING_ENABLED;
 
   if (rollingEnabled) {
+    const rollingBatch = toPositiveInteger(rawSettings.batchSize, DEFAULT_ROLLING_BATCH_SIZE);
+    const rollingCooldown = toPositiveInteger(
+      rawSettings.cooldownSeconds,
+      DEFAULT_ROLLING_COOLDOWN_SECONDS
+    );
     return {
       rollingEnabled: true,
-      batchSize: ROLLING_BATCH_SIZE,
-      cooldownSeconds: ROLLING_COOLDOWN_SECONDS,
+      batchSize: Math.min(rollingBatch, MAX_ROLLING_BATCH_SIZE),
+      cooldownSeconds: Math.min(
+        Math.max(rollingCooldown, MIN_ROLLING_COOLDOWN_SECONDS),
+        MAX_COOLDOWN_SECONDS
+      ),
     };
   }
 
