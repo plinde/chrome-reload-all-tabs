@@ -151,9 +151,9 @@ async function sleepOrCancel(run, ms) {
   return outcome === "sleep-finished";
 }
 
-// Reload all tabs in current window using configured rolling behavior.
-async function runReloadSequence(run) {
-  const tabs = await chrome.tabs.query({ currentWindow: true });
+// Reload all tabs in the given window using configured rolling behavior.
+async function runReloadSequence(run, windowId) {
+  const tabs = await chrome.tabs.query({ windowId });
   const settings = await getReloadSettings();
   const orderedTabs = settings.rollingEnabled ? orderTabsForRolling(tabs) : tabs;
   const batches = chunk(orderedTabs, settings.batchSize);
@@ -182,7 +182,7 @@ async function runReloadSequence(run) {
   }
 }
 
-async function startReloadRun() {
+async function startReloadRun(windowId) {
   if (reloadState.activeRun) {
     return;
   }
@@ -191,11 +191,19 @@ async function startReloadRun() {
   reloadState.activeRun = run;
   startRunningActionUi();
 
+  // Periodically ping a Chrome API to prevent the service worker from being
+  // terminated mid-reload.  The MV3 idle timeout is ~30 s; pinging every 20 s
+  // keeps the worker alive for the entire sequence.
+  const keepAlive = setInterval(() => {
+    chrome.runtime.getPlatformInfo();
+  }, 20000);
+
   try {
-    await runReloadSequence(run);
+    await runReloadSequence(run, windowId);
   } catch (error) {
     console.error("Reload run failed", error);
   } finally {
+    clearInterval(keepAlive);
     if (reloadState.activeRun && reloadState.activeRun.id === run.id) {
       reloadState.activeRun = null;
       stopRunningActionUi();
@@ -203,23 +211,34 @@ async function startReloadRun() {
   }
 }
 
-function toggleReload() {
+function toggleReload(windowId) {
   if (reloadState.activeRun) {
     requestCancellationForActiveRun();
     return;
   }
 
-  void startReloadRun();
+  void startReloadRun(windowId);
 }
 
 setIdleActionUi();
 
-// Trigger on extension icon click
-chrome.action.onClicked.addListener(toggleReload);
+// Trigger on extension icon click — use the clicked tab's windowId to target
+// the correct window (service workers have no "current window").
+chrome.action.onClicked.addListener((tab) => {
+  toggleReload(tab.windowId);
+});
 
-// Trigger on keyboard shortcut
-chrome.commands.onCommand.addListener((command) => {
-  if (command === "reload-all-tabs") {
-    toggleReload();
+// Trigger on keyboard shortcut — the tab parameter is available since Chrome 101.
+// Fall back to lastFocused if Chrome omits it.
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  if (command !== "reload-all-tabs") {
+    return;
+  }
+
+  if (tab && tab.windowId != null) {
+    toggleReload(tab.windowId);
+  } else {
+    const win = await chrome.windows.getLastFocused();
+    toggleReload(win.id);
   }
 });
