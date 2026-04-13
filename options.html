@@ -61,13 +61,13 @@
       <label for="rollingEnabled">
         <input id="rollingEnabled" name="rollingEnabled" type="checkbox" />
         Enable rolling mode
-        <span class="hint">Locks behavior to 1 tab at a time with 3s cooloff.</span>
+        <span id="rollingHint" class="hint">Active-tab-first, then left-to-right serial reload.</span>
       </label>
 
       <label for="batchSize">
         Tabs at a time
         <input id="batchSize" name="batchSize" type="number" min="1" step="1" required />
-        <span class="hint">Used only when rolling mode is disabled.</span>
+        <span id="batchSizeHint" class="hint">Number of tabs to reload simultaneously.</span>
       </label>
 
       <label for="cooldownSeconds">
@@ -76,11 +76,11 @@
           id="cooldownSeconds"
           name="cooldownSeconds"
           type="number"
-          min="5"
+          min="3"
           step="1"
           required
         />
-        <span class="hint">Used only when rolling mode is disabled. Minimum 5 seconds.</span>
+        <span id="cooldownHint" class="hint">Seconds between each batch.</span>
       </label>
 
       <button type="submit">Save</button>

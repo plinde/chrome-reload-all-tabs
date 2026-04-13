@@ -13,6 +13,9 @@ The extension's current Chrome listing name remains **Reload All Tabs**.
 - Defaults to rolling mode via checkbox setting (enabled by default).
 - Supports configurable batching: `n` tabs per batch.
 - Waits a configurable cooldown between batches.
+- Clicking the toolbar icon while a run is active cancels the in-progress run.
+- Shows an active spinner-like toolbar badge while reloading.
+- Debounces triggers so only one reload run can be active at a time.
 - In rolling mode, behavior is locked to `1` tab per batch with `3s` cooloff.
 - Outside rolling mode, cooldown minimum is `5` seconds.
 - Supports keyboard shortcut trigger:
@@ -26,6 +29,7 @@ When rolling mode is enabled, the extension:
 1. Reloads the currently active tab first.
 2. Continues reloading tabs serially from left to right in the tab strip.
 3. Uses a fixed cooloff of 3 seconds between reloads.
+4. Can be canceled mid-run by clicking the extension icon again.
 
 When rolling mode is disabled, the extension:
 
@@ -33,6 +37,13 @@ When rolling mode is disabled, the extension:
 2. Splits tabs into batches based on **Tabs at a time**.
 3. Reloads each batch.
 4. Waits **Cooldown (seconds)** before the next batch.
+5. Can be canceled between batches by clicking the extension icon again.
+
+### Active run controls
+
+- Starting a run locks out parallel runs from rapid repeat clicks/shortcuts.
+- While running, the toolbar badge animates as a spinner-like indicator.
+- Clicking the toolbar icon while running requests cancellation and stops scheduling further reloads.
 
 ### Examples
 
@@ -86,7 +97,7 @@ When rolling mode is disabled, the extension:
 
 - This is a Manifest V3 service worker extension (no persistent background page).
 - After changing `background.js`, `manifest.json`, or options files, reload the extension in `chrome://extensions/`.
-- The service worker is event-driven and may stop when idle; avoid in-memory state assumptions.
+- The service worker is event-driven and may stop when idle; run state is in-memory and only valid for the active run lifecycle.
 
 ## Why This Exists
 
