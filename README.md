@@ -10,12 +10,13 @@ The extension's current Chrome listing name remains **Reload All Tabs**.
 ## What It Does
 
 - Reloads tabs in the current window only.
+- Runs independently per window: several windows can reload concurrently, each with its own progress and cancellation.
 - Defaults to rolling mode via checkbox setting (enabled by default).
 - Supports configurable batching: `n` tabs per batch.
 - Waits a configurable cooldown between batches.
-- Clicking the toolbar icon while a run is active cancels the in-progress run.
-- Shows an active spinner-like toolbar badge while reloading.
-- Debounces triggers so only one reload run can be active at a time.
+- Clicking the toolbar icon while a run is active cancels that window's in-progress run.
+- Shows an active spinner-like toolbar badge while reloading, scoped to the reloading window.
+- Debounces triggers so only one reload run can be active per window.
 - In rolling mode, behavior is locked to `1` tab per batch with `3s` cooloff.
 - Outside rolling mode, cooldown minimum is `5` seconds.
 - Supports keyboard shortcut trigger:
@@ -41,9 +42,11 @@ When rolling mode is disabled, the extension:
 
 ### Active run controls
 
-- Starting a run locks out parallel runs from rapid repeat clicks/shortcuts.
-- While running, the toolbar badge animates as a spinner-like indicator.
-- Clicking the toolbar icon while running requests cancellation and stops scheduling further reloads.
+- Starting a run locks out further runs **in that window**, so rapid repeat clicks/shortcuts do not stack.
+- Other windows are unaffected: each keeps its own run, badge, and cancel state.
+- While running, the toolbar badge animates as a spinner-like indicator on the reloading window's active tab.
+- Clicking the toolbar icon while running requests cancellation for that window and stops scheduling further reloads there.
+- Closing a window cancels its run.
 
 ### Examples
 
@@ -98,6 +101,8 @@ When rolling mode is disabled, the extension:
 - This is a Manifest V3 service worker extension (no persistent background page).
 - After changing `background.js`, `manifest.json`, or options files, reload the extension in `chrome://extensions/`.
 - The service worker is event-driven and may stop when idle; run state is in-memory and only valid for the active run lifecycle.
+- Run state lives in a `Map` keyed by `windowId`, and all badge/title writes pass a `tabId` so per-window state never leaks across windows. A single shared keep-alive timer is held while any run is in flight.
+- `icons/*.png` are generated from `icons/icon.svg`: `for s in 16 32 48 128; do rsvg-convert -w $s -h $s icons/icon.svg -o icons/icon$s.png; done`
 
 ## Why This Exists
 

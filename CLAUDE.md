@@ -12,10 +12,15 @@ Chrome Manifest V3 extension that reloads all tabs in the current window.
 
 **Scope**: `chrome.tabs.query({ windowId })` - reloads the window where the click/shortcut originated, not all browser windows.
 
+**Concurrency**: Run state lives in `runsByWindowId` (`Map` keyed by `windowId`), so windows reload independently. All badge/title writes pass `tabId` — never window-global — so one window's spinner cannot paint over another's. One shared keep-alive timer is held while any run is in flight (`acquireKeepAlive`/`releaseKeepAlive`).
+
 ## Development
 
 Load unpacked: `chrome://extensions/` → Developer mode → Load unpacked
 
 Test changes: Reload extension on `chrome://extensions/` (no browser restart needed)
 
-Version: `1.3.2` in `manifest.json` (use semver)
+Icons: `icons/*.png` are generated from `icons/icon.svg` via
+`for s in 16 32 48 128; do rsvg-convert -w $s -h $s icons/icon.svg -o icons/icon$s.png; done`
+
+Version: `1.4.0` in `manifest.json` (use semver)
