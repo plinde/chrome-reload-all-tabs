@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Reload all tabs">
+  <rect width="128" height="128" rx="26" fill="#7d8996" />
+  <g fill="none" stroke="#eef1f3" stroke-width="13" stroke-linecap="butt">
+    <path d="M84.93 37.21 A34 34 0 0 1 64.00 98.00" />
+    <path d="M43.07 90.79 A34 34 0 0 1 64.00 30.00" />
+  </g>
+  <g fill="#eef1f3">
+    <polygon points="65.95,112.95 65.95,83.05 41.90,98.00" />
+    <polygon points="62.05,15.05 62.05,44.95 86.10,30.00" />
+  </g>
+</svg>
